@@ -1,71 +1,116 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:mobitrendz/screens/forgot_password_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mobitrendz/constants/app_constants.dart';
 import 'package:mobitrendz/screens/home_screen.dart';
-import 'signup_screen.dart';
 
-class SignInScreen extends StatelessWidget {
+class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
+
+  @override
+  State<SignInScreen> createState() => _SignInScreenState();
+}
+
+class _SignInScreenState extends State<SignInScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController txtEmail = TextEditingController();
+  final TextEditingController txtPassword = TextEditingController();
+  bool isLoading = false;
+
+  Future<void> signIn() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      setState(() => isLoading = true);
+
+      try {
+        final response = await http.post(
+          Uri.parse('${AppConstants.baseUrl}/users/login'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'email': txtEmail.text,
+            'password': txtPassword.text,
+          }),
+        );
+
+        final responseData = jsonDecode(response.body);
+        final responseMessage = responseData['message'] ?? 'Unknown error';
+
+        if (response.statusCode == 200) {
+          final token = responseData['token'];
+          final userId = responseData['user']['_id'];
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('token', token);
+          await prefs.setString('userId', userId);
+          await prefs.setString('email', txtEmail.text);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login successful!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          Get.offAll(() => const HomeScreen());
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(responseMessage),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An error occurred: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        setState(() => isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Padding(
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(top: 30),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back,
-                            color: Colors.black, size: 28),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: 30),
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, size: 28),
+                  onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(height: 15),
-                const Text(
-                  "Login your",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const Text(
-                  "Account",
-                  style: TextStyle(
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    height: 1.2,
-                    letterSpacing: 0.8,
-                  ),
-                ),
+                const Text("Login your",
+                    style:
+                        TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+                const Text("Account",
+                    style:
+                        TextStyle(fontSize: 36, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 40),
-                _buildTextField(Icons.email, "Email"),
+                _buildTextField(Icons.email, "Email", txtEmail, false),
                 const SizedBox(height: 20),
-                _buildTextField(Icons.lock, "Password", isPassword: true),
+                _buildTextField(Icons.lock, "Password", txtPassword, true),
                 const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {},
-                    child: const Text(
-                      "Forget Password?",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
+                    onPressed: () {
+                      Get.to(() => ForgotPasswordScreen());
+                    }, // Forgot password handler
+                    child: const Text("Forget Password?"),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -73,49 +118,41 @@ class SignInScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const HomeScreen()),
-                      );
-                    },
+                    onPressed: isLoading ? null : signIn,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black,
-                      elevation: 8,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
-                    child: const Text(
-                      "Sign in",
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text("Sign in",
+                            style:
+                                TextStyle(fontSize: 18, color: Colors.white)),
                   ),
                 ),
                 const SizedBox(height: 25),
                 Row(
                   children: const [
-                    Expanded(child: Divider(thickness: 1)),
+                    Expanded(child: Divider()),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 10),
                       child: Text("or continue with"),
                     ),
-                    Expanded(child: Divider(thickness: 1)),
+                    Expanded(child: Divider()),
                   ],
                 ),
                 const SizedBox(height: 25),
                 Center(
                   child: GestureDetector(
-                    onTap: () {
-                      // Google Sign-In action
-                    },
+                    onTap: () {}, // Google sign-in logic
                     child: Container(
                       height: 70,
                       width: 70,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
                         color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(15),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black12,
@@ -135,29 +172,16 @@ class SignInScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      "Don't have an account?",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.black54,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    const Text("Don't have an account?"),
                     const SizedBox(width: 5),
                     GestureDetector(
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const SignUpScreen()),
-                        );
+                        Get.toNamed('/signup'); // or use Navigator
                       },
                       child: const Text(
                         "Sign up",
                         style: TextStyle(
-                          fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
                           decoration: TextDecoration.underline,
                         ),
                       ),
@@ -173,43 +197,33 @@ class SignInScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(IconData icon, String hint,
-      {bool isPassword = false}) {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        borderRadius: BorderRadius.circular(18),
-        color: Colors.white,
-      ),
-      child: TextField(
-        obscureText: isPassword,
-        style: const TextStyle(fontSize: 18),
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.black87, size: 26),
-          hintText: hint,
-          hintStyle: const TextStyle(fontSize: 18, color: Colors.grey),
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          contentPadding:
-              const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: const BorderSide(color: Colors.black),
-          ),
-          suffixIcon: isPassword
-              ? const Icon(Icons.visibility_off, color: Colors.grey, size: 24)
-              : null,
-        ),
+  Widget _buildTextField(
+    IconData icon,
+    String hint,
+    TextEditingController controller,
+    bool isPassword,
+  ) {
+    return TextFormField(
+      controller: controller,
+      obscureText: isPassword,
+      validator: (value) {
+        if (value == null || value.isEmpty) return 'Please enter $hint';
+        if (hint == "Email" && !RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+          return 'Enter a valid email';
+        }
+        if (hint == "Password" && value.length < 6) {
+          return 'Password must be at least 6 characters';
+        }
+        return null;
+      },
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: Colors.black87),
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.grey.shade100,
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
       ),
     );
   }
