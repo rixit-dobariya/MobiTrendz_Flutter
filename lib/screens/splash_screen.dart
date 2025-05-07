@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:mobitrendz/screens/home_screen.dart';
+import 'package:mobitrendz/screens/signin_screen.dart';
 import 'dart:async';
 import 'signup_screen.dart'; // Import Sign-Up Screen
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get/get.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,11 +20,19 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // Navigate to Sign-Up Screen after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const SignUpScreen()),
-      );
+      startApp();
     });
+  }
+
+  void startApp() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token != null && token.isNotEmpty) {
+      Get.offAll(() => const HomeScreen());
+    } else {
+      Get.offAll(() => const SignInScreen());
+    }
   }
 
   @override

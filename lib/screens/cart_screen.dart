@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobitrendz/screens/checkout_screen.dart';
 
-void main() {
-  runApp(MaterialApp(home: CartScreen()));
-}
-
 class CartScreen extends StatefulWidget {
   @override
   _CartScreenState createState() => _CartScreenState();

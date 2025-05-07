@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobitrendz/screens/home_page_content.dart';
 
-import 'package:mobitrendz/screens/home_screen.dart';
 import 'package:mobitrendz/screens/cart_screen.dart';
 import 'package:mobitrendz/screens/orders_screen.dart';
 import 'package:mobitrendz/screens/profile_screen.dart';
