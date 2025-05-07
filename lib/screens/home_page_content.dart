@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mobitrendz/constants/app_constants.dart';
+import 'package:mobitrendz/screens/product_details.dart';
 import 'category_screen.dart';
 import '../controllers/category_controller.dart';
 import '../models/category_model.dart';
@@ -267,7 +268,7 @@ class _HomePageContentState extends State<HomePageContent> {
             }),
 
             // Products
-            const Text("Most Popular",
+            const Text("Latest products",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 14),
 
@@ -344,7 +345,7 @@ class _HomePageContentState extends State<HomePageContent> {
 
     return GestureDetector(
       onTap: () {
-        // Navigate to product detail
+        Get.to(ProductDetailScreen(product: product));
       },
       child: Container(
         decoration: BoxDecoration(
