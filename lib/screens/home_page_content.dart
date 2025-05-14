@@ -7,6 +7,8 @@ import 'package:mobitrendz/screens/product_details.dart';
 import 'category_screen.dart';
 import '../controllers/category_controller.dart';
 import '../models/category_model.dart';
+import '../../controllers/cart_controller.dart';
+import '../widgets/ProductCard.dart';
 
 class HomePageContent extends StatefulWidget {
   @override
@@ -15,6 +17,7 @@ class HomePageContent extends StatefulWidget {
 
 class _HomePageContentState extends State<HomePageContent> {
   final CategoryController _categoryController = Get.put(CategoryController());
+  final CartController cartController = Get.put(CartController());
 
   var isProductLoading = true.obs;
   var products = [].obs;
@@ -267,28 +270,53 @@ class _HomePageContentState extends State<HomePageContent> {
               );
             }),
 
-            // Products
-            const Text("Latest products",
+            const SizedBox(height: 20),
+            const Text("Latest Products",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 14),
-
+            const SizedBox(height: 12),
             Obx(() {
               if (isProductLoading.value) {
-                return Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
               }
-              return GridView.count(
+              if (products.isEmpty) {
+                return const Center(child: Text("No products found"));
+              }
+              return GridView.builder(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                childAspectRatio: 0.75,
-                children: products
-                    .map<Widget>((product) => _buildProductCard(product))
-                    .toList(),
+                itemCount: products.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.65,
+                ),
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return Obx(
+                    () => ProductCard(
+                      imageUrl: product['productImage'] ?? '',
+                      title: product['productName'] ?? '',
+                      price: (((product['salePrice'] ?? 0) *
+                              (1 - ((product['discount'] ?? 0) / 100))))
+                          .toString(),
+                      discount: product['discount']?.toString(),
+                      onPressed: () {
+                        Get.to(() => ProductDetailScreen(product: product));
+                      },
+                      onCart: () {
+                        Get.find<CartController>().addToCart(product["_id"]);
+                      },
+                      isLoading: Get.find<CartController>()
+                          .loadingProductIds
+                          .contains(product["_id"]),
+                      margin: 0,
+                      width: double.infinity,
+                    ),
+                  );
+                },
               );
             }),
-            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -298,7 +326,9 @@ class _HomePageContentState extends State<HomePageContent> {
   Widget _buildBrandIcon(CategoryModel category) {
     return GestureDetector(
       onTap: () {
-        Get.to(() => CategoryScreen());
+        Get.to(() => CategoryScreen(
+              category: category,
+            ));
       },
       child: Column(
         children: [
