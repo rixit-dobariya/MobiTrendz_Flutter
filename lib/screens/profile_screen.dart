@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:mobitrendz/screens/adress_list_screen.dart';
 import 'package:mobitrendz/screens/edit_address.dart';
 import 'package:mobitrendz/screens/edit_profile_view.dart';
 import 'package:mobitrendz/screens/signin_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -11,6 +14,32 @@ void main() {
 }
 
 class ProfileScreen extends StatelessWidget {
+  void logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    final authType = prefs.getString('authType');
+
+    if (authType == 'Google') {
+      // Use Get.find if you're using Get.put() for controller, otherwise
+      // final googleSignInController = Get.put(GoogleSignInController());
+      // await googleSignInController.signOut();
+    }
+
+    await prefs.remove('token');
+    await prefs.remove('userId');
+    await prefs.remove('authType');
+
+    Get.snackbar(
+      'Logged Out',
+      'You have been logged out successfully!',
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.TOP,
+      duration: const Duration(seconds: 2),
+    );
+
+    Get.offAll(() => const SignInScreen());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,16 +88,10 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           ProfileOption(
-            icon: Icons.logout,
-            title: "Logout",
-            color: Colors.red,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SignInScreen()),
-              );
-            },
-          ),
+              icon: Icons.logout,
+              title: "Logout",
+              color: Colors.red,
+              onTap: logout),
         ],
       ),
     );

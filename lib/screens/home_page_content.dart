@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mobitrendz/constants/app_constants.dart';
 import 'package:mobitrendz/screens/product_details.dart';
+import 'package:mobitrendz/screens/search_screen.dart';
 import 'category_screen.dart';
 import '../controllers/category_controller.dart';
 import '../models/category_model.dart';
@@ -146,6 +147,7 @@ class _HomePageContentState extends State<HomePageContent> {
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 ),
+                onTap: () => Get.to(() => SearchView()),
               ),
             ),
             const SizedBox(height: 18),

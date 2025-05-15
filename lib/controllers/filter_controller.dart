@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 class FilterController extends GetxController {
   var selectedCategories = <String>[].obs;
   var minPrice = 0.0.obs;
-  var maxPrice = 1000.0.obs;
+  var maxPrice = 300000.0.obs;
 
   var filteredProducts = [].obs;
   var allProducts = [].obs;
