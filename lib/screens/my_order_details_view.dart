@@ -60,7 +60,7 @@ class _MyOrdersDetailViewState extends State<MyOrdersDetailView> {
         elevation: 0.5,
         leading: IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: Image.asset("assets/img/back.png", width: 20, height: 20),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
         ),
         centerTitle: true,
         title: Text(
@@ -355,8 +355,10 @@ class _MyOrdersDetailViewState extends State<MyOrdersDetailView> {
       itemsTotal += price * qty;
       totalDiscount += discount * qty;
     }
-
-    final double totalAmount = itemsTotal - totalDiscount;
+    final double shippingCharge = double.tryParse(
+            order['shippingCharge']['\$numberDecimal'].toString()) ??
+        0.0;
+    final double totalAmount = itemsTotal + shippingCharge - totalDiscount;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -370,7 +372,7 @@ class _MyOrdersDetailViewState extends State<MyOrdersDetailView> {
         children: [
           _buildAmountRow("Items Total", "\₹${itemsTotal.toStringAsFixed(2)}"),
           _buildAmountRow(
-              "Total Discount", "- \₹${totalDiscount.toStringAsFixed(2)}"),
+              "Shipping Charge", " \₹${shippingCharge.toStringAsFixed(2)}"),
           const Divider(height: 30, thickness: 1),
           _buildAmountRow(
             "Total Amount",
@@ -446,9 +448,9 @@ class _MyOrdersDetailViewState extends State<MyOrdersDetailView> {
 
   String getPaymentStatus(Map<String, dynamic> order) {
     String status = order["paymentStatus"] ?? "";
-    if (status.toLowerCase() == "paid") {
+    if (status.toLowerCase() == "completed") {
       return "Paid";
-    } else if (status.toLowerCase() == "unpaid") {
+    } else if (status.toLowerCase() == "pending") {
       return "Unpaid";
     }
     return "Unknown";
@@ -456,9 +458,9 @@ class _MyOrdersDetailViewState extends State<MyOrdersDetailView> {
 
   Color getPaymentStatusColor(Map<String, dynamic> order) {
     String status = order["paymentStatus"] ?? "";
-    if (status.toLowerCase() == "paid") {
+    if (status.toLowerCase() == "completed") {
       return Colors.green;
-    } else if (status.toLowerCase() == "unpaid") {
+    } else if (status.toLowerCase() == "pending") {
       return Colors.red;
     }
     return Colors.grey;
@@ -497,6 +499,6 @@ class _MyOrdersDetailViewState extends State<MyOrdersDetailView> {
   }
 
   String getPaymentType(Map<String, dynamic> order) {
-    return order["paymentType"] ?? "N/A";
+    return "Online";
   }
 }

@@ -230,10 +230,7 @@ class _CartScreenState extends State<CartScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false, // This hides the back arrow
       ),
       body: Stack(
         alignment: Alignment.bottomCenter,

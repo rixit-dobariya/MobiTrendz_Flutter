@@ -196,7 +196,7 @@ class CheckoutScreen extends StatelessWidget {
                           ElevatedButton(
                             onPressed: isLoading
                                 ? null
-                                : () async {
+                                : () {
                                     if (checkoutController
                                         .selectedAddress.isEmpty) {
                                       Get.snackbar("Error",
@@ -211,7 +211,7 @@ class CheckoutScreen extends StatelessWidget {
 
                                     checkoutController
                                         .calculateTotal(); // Ensure pricing is up-to-date
-                                    await checkoutController
+                                    checkoutController
                                         .createRazorpayOrder(); // Starts the payment process
                                   },
                             style: ElevatedButton.styleFrom(

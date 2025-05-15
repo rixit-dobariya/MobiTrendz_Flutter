@@ -51,14 +51,6 @@ class OrderSuccessScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Column(
-                  children: [
-                    buildOrderDetail("Order ID", "#123456789"),
-                    buildOrderDetail("Payment Method", "COD"),
-                    buildOrderDetail("Total Amount", "₹1,30,990"),
-                    // buildOrderDetail("Estimated Delivery", "3-5 Business Days"),
-                  ],
-                ),
               ),
 
               const SizedBox(height: 30),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobitrendz/constants/app_constants.dart';
+import 'package:mobitrendz/screens/my_order_details_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -87,68 +88,71 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Widget buildOrderItem(Map<String, dynamic> order) {
     final address = order['delAddressId'];
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Order header
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  "Order No: #${order['_id']}",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black87,
+    return InkWell(
+      onTap: () => Get.to(() => MyOrdersDetailView(orderId: order['_id'])),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Order header
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    "Order No: #${order['_id']}",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: getOrderStatusColor(order['orderStatus']),
-                  borderRadius: BorderRadius.circular(20),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: getOrderStatusColor(order['orderStatus']),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    order['orderStatus'] ?? "",
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
                 ),
-                child: Text(
-                  order['orderStatus'] ?? "",
-                  style: const TextStyle(color: Colors.white, fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            formatDate(order['createdAt']),
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-          const SizedBox(height: 12),
-
-          // Order details
-          buildOrderRow(
-              "Total:", "₹${order['total']?['\$numberDecimal'] ?? '0'}"),
-          buildOrderRow("Shipping:",
-              "₹${order['shippingCharge']?['\$numberDecimal'] ?? '0'}"),
-          buildOrderRow("Payment Mode:", order['paymentMode'] ?? ""),
-          buildOrderRow(
-            "Payment Status:",
-            order['paymentStatus'] ?? "",
-            statusColor: getPaymentStatusColor(order['paymentStatus']),
-          ),
-          if (address != null)
-            buildOrderRow(
-              "Delivery Address:",
-              "${address['fullName']}, ${address['address']}, ${address['city']}, ${address['state']} - ${address['pincode']} | Ph: ${address['phone']}",
+              ],
             ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              formatDate(order['createdAt']),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+            const SizedBox(height: 12),
+
+            // Order details
+            buildOrderRow(
+                "Total:", "₹${order['total']?['\$numberDecimal'] ?? '0'}"),
+            buildOrderRow("Shipping:",
+                "₹${order['shippingCharge']?['\$numberDecimal'] ?? '0'}"),
+            buildOrderRow("Payment Mode:", order['paymentMode'] ?? ""),
+            buildOrderRow(
+              "Payment Status:",
+              order['paymentStatus'] ?? "",
+              statusColor: getPaymentStatusColor(order['paymentStatus']),
+            ),
+            if (address != null)
+              buildOrderRow(
+                "Delivery Address:",
+                "${address['fullName']}, ${address['address']}, ${address['city']}, ${address['state']} - ${address['pincode']} | Ph: ${address['phone']}",
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -179,21 +183,31 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : orders.isEmpty
-            ? const Center(
-                child: Text(
-                  "No orders found.",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("My Orders",
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        automaticallyImplyLeading: false, // This hides the back arrow
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : orders.isEmpty
+              ? const Center(
+                  child: Text(
+                    "No orders found.",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.only(top: 12, bottom: 60),
+                  itemCount: orders.length,
+                  itemBuilder: (context, index) {
+                    return buildOrderItem(orders[index]);
+                  },
                 ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.only(top: 12, bottom: 60),
-                itemCount: orders.length,
-                itemBuilder: (context, index) {
-                  return buildOrderItem(orders[index]);
-                },
-              );
+    );
   }
 }
