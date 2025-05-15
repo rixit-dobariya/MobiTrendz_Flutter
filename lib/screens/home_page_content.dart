@@ -200,75 +200,75 @@ class _HomePageContentState extends State<HomePageContent> {
             }),
             const SizedBox(height: 18),
             const SizedBox(height: 20),
-            const Text("Promo Codes",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            Obx(() {
-              if (isPromoLoading.value) {
-                return Center(child: CircularProgressIndicator());
-              }
-              if (promoCodes.isEmpty) {
-                return Center(child: Text("No Promo Codes Available"));
-              }
-              return SizedBox(
-                height: 110,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: promoCodes.length,
-                  itemBuilder: (context, index) {
-                    final promo = promoCodes[index];
-                    return Container(
-                      width: 220,
-                      margin: const EdgeInsets.only(right: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          )
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            promo["name"] ?? "",
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            promo["description"] ?? "",
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontSize: 13, color: Colors.grey[600]),
-                          ),
-                          const SizedBox(height: 4),
-                          if (promo["discount"] != null &&
-                              promo["discount"] > 0)
-                            Text(
-                              "${promo["discount"]}% OFF",
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green,
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              );
-            }),
+            // const Text("Promo Codes",
+            //     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            // const SizedBox(height: 12),
+            // Obx(() {
+            //   if (isPromoLoading.value) {
+            //     return Center(child: CircularProgressIndicator());
+            //   }
+            //   if (promoCodes.isEmpty) {
+            //     return Center(child: Text("No Promo Codes Available"));
+            //   }
+            //   return SizedBox(
+            //     height: 110,
+            //     child: ListView.builder(
+            //       scrollDirection: Axis.horizontal,
+            //       itemCount: promoCodes.length,
+            //       itemBuilder: (context, index) {
+            //         final promo = promoCodes[index];
+            //         return Container(
+            //           width: 220,
+            //           margin: const EdgeInsets.only(right: 12),
+            //           padding: const EdgeInsets.all(12),
+            //           decoration: BoxDecoration(
+            //             color: Colors.white,
+            //             borderRadius: BorderRadius.circular(12),
+            //             border: Border.all(color: Colors.grey.shade300),
+            //             boxShadow: [
+            //               BoxShadow(
+            //                 color: Colors.black12,
+            //                 blurRadius: 4,
+            //                 offset: Offset(0, 2),
+            //               )
+            //             ],
+            //           ),
+            //           child: Column(
+            //             crossAxisAlignment: CrossAxisAlignment.start,
+            //             children: [
+            //               Text(
+            //                 promo["name"] ?? "",
+            //                 style: TextStyle(
+            //                     fontSize: 16,
+            //                     fontWeight: FontWeight.bold,
+            //                     color: Colors.black87),
+            //               ),
+            //               const SizedBox(height: 4),
+            //               Text(
+            //                 promo["description"] ?? "",
+            //                 maxLines: 2,
+            //                 overflow: TextOverflow.ellipsis,
+            //                 style: TextStyle(
+            //                     fontSize: 13, color: Colors.grey[600]),
+            //               ),
+            //               const SizedBox(height: 4),
+            //               if (promo["discount"] != null &&
+            //                   promo["discount"] > 0)
+            //                 Text(
+            //                   "${promo["discount"]}% OFF",
+            //                   style: TextStyle(
+            //                     fontSize: 13,
+            //                     fontWeight: FontWeight.bold,
+            //                     color: Colors.green,
+            //                   ),
+            //                 ),
+            //             ],
+            //           ),
+            //         );
+            //       },
+            //     ),
+            //   );
+            // }),
 
             const SizedBox(height: 20),
             const Text("Latest Products",

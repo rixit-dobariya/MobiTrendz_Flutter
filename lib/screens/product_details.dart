@@ -57,25 +57,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       // Check if user has purchased the product
       final purchaseRes = await http.get(
         Uri.parse(
-            '${AppConstants.baseUrl}/orders/hasPurchased?userId=$userId&productId=${widget.product["_id"]}'),
+            '${AppConstants.baseUrl}/orders/has-purchased/$userId/${widget.product["_id"]}'),
       );
 
       if (purchaseRes.statusCode == 200) {
         final data = json.decode(purchaseRes.body);
-        hasPurchased = data['hasPurchased'] ?? false;
+        hasPurchased = data['purchased'] ?? false;
       }
-
-      // Check if user already reviewed
-      final reviewRes = await http.get(
-        Uri.parse(
-            '${AppConstants.baseUrl}/reviews/hasReviewed?userId=$userId&productId=${widget.product["_id"]}'),
+      final baseUrl = '${AppConstants.baseUrl}/reviews';
+      final productId = widget.product["_id"];
+      final userReviewRes = await http.get(
+        Uri.parse('$baseUrl?productId=$productId&userId=$userId'),
       );
 
-      if (reviewRes.statusCode == 200) {
-        final data = json.decode(reviewRes.body);
-        hasUserReviewed = data['hasReviewed'] ?? false;
+      if (userReviewRes.statusCode == 200) {
+        final userReviews = json.decode(userReviewRes.body);
+        hasUserReviewed = userReviews.isNotEmpty;
       }
-
+      print(hasUserReviewed);
+      print(hasPurchased);
       setState(() {});
     } catch (e) {
       debugPrint("Error checking review eligibility: $e");
@@ -128,6 +128,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           const SnackBar(content: Text("Review submitted successfully!")),
         );
         fetchReviews(); // Refresh review list
+        setState(() {
+          hasUserReviewed = true;
+        });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Failed to submit review.")),
@@ -178,9 +181,26 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            Text(
-              product['productName'],
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product['productName'],
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '₹${totalPrice.toString()}',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
             ),
             const Divider(thickness: 1),
             const Text(
@@ -255,7 +275,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     }).toList(),
                   ),
             const SizedBox(height: 12),
-            if (hasPurchased || !hasUserReviewed)
+            if (hasPurchased && !hasUserReviewed)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -318,29 +338,42 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ],
               ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  cartController.addToCart(product["_id"], quantity: 1);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => CartScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
+            Obx(() {
+              final isLoading =
+                  cartController.loadingProductIds.contains(product["_id"]);
+
+              return SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          cartController.addToCart(product["_id"], quantity: 1);
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
                   ),
+                  child: isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          "Add to Cart",
+                          style: TextStyle(color: Colors.white, fontSize: 18),
+                        ),
                 ),
-                child: const Text(
-                  "Add to Cart",
-                  style: TextStyle(color: Colors.white, fontSize: 18),
-                ),
-              ),
-            ),
+              );
+            }),
             const SizedBox(height: 20),
           ],
         ),
