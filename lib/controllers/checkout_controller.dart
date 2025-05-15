@@ -60,17 +60,16 @@ class CheckoutController extends GetxController {
         body: json.encode({'amount': totalPrice.value}),
         headers: {'Content-Type': 'application/json'},
       );
-
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['success']) {
           final razorpayOrderId = responseData['order']['id'];
           initiatePayment(razorpayOrderId);
         } else {
-          Get.snackbar('Error', 'Failed to create Razorpay order');
+          Get.snackbar('Error', 'Failed to create Razorpay order 1');
         }
       } else {
-        Get.snackbar('Error', 'Failed to create Razorpay order');
+        Get.snackbar('Error', 'Failed to create Razorpay order 2');
       }
     } catch (error) {
       Get.snackbar('Error', 'An error occurred while creating Razorpay order');

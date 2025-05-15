@@ -44,20 +44,25 @@ class _EditProfileViewState extends State<EditProfileView> {
     userId = prefs.getString("userId");
 
     if (userId != null) {
-      final res =
-          await http.get(Uri.parse('${AppConstants.baseUrl}/users/$userId'));
+      try {
+        final res =
+            await http.get(Uri.parse('${AppConstants.baseUrl}/users/$userId'));
 
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body);
-        setState(() {
-          _emailController.text = data['email'] ?? '';
-          _firstNameController.text = data['firstName'] ?? '';
-          _lastNameController.text = data['lastName'] ?? '';
-          _mobileController.text = data['mobile'] ?? '';
-          profileImageUrl = data['profilePicture'];
-        });
-      } else {
-        Get.snackbar("Error", "Failed to fetch profile",
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body);
+          setState(() {
+            _emailController.text = data['email'] ?? '';
+            _firstNameController.text = data['firstName'] ?? '';
+            _lastNameController.text = data['lastName'] ?? '';
+            _mobileController.text = data['mobile'] ?? '';
+            profileImageUrl = data['profilePicture'];
+          });
+        } else {
+          Get.snackbar("Error", "Failed to fetch profile",
+              backgroundColor: Colors.red, colorText: Colors.white);
+        }
+      } catch (e) {
+        Get.snackbar("Error", "Failed to load profile: $e",
             backgroundColor: Colors.red, colorText: Colors.white);
       }
     }
@@ -65,17 +70,21 @@ class _EditProfileViewState extends State<EditProfileView> {
   }
 
   Future<void> _pickImage() async {
-    final picked = await ImagePicker()
-        .pickImage(source: ImageSource.gallery, imageQuality: 75);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 75,
+    );
     if (picked != null) {
       setState(() {
         pickedImage = File(picked.path);
+        profileImageUrl = null; // clear old image URL
       });
     }
   }
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
+    if (userId == null) return;
 
     setState(() => isSubmitting = true);
 
@@ -111,6 +120,7 @@ class _EditProfileViewState extends State<EditProfileView> {
             backgroundColor: Colors.red, colorText: Colors.white);
       }
     } catch (e) {
+      debugPrint("Exception: $e");
       Get.snackbar("Error", "Something went wrong: $e",
           backgroundColor: Colors.red, colorText: Colors.white);
     }
@@ -120,19 +130,22 @@ class _EditProfileViewState extends State<EditProfileView> {
 
   @override
   Widget build(BuildContext context) {
-    final displayImage = pickedImage != null
-        ? FileImage(pickedImage!)
-        : (profileImageUrl == null || profileImageUrl!.isEmpty)
-            ? const AssetImage("assets/img/default_profile.png")
-            : NetworkImage(profileImageUrl!) as ImageProvider;
+    ImageProvider? displayImage;
+
+    if (pickedImage != null) {
+      displayImage = FileImage(pickedImage!);
+    } else if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
+      displayImage = NetworkImage(profileImageUrl!);
+    }
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
         leading: IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Image.asset("assets/img/back.png", width: 20, height: 20)),
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+        ),
         centerTitle: true,
         title: const Text(
           "Edit Profile",
@@ -155,7 +168,12 @@ class _EditProfileViewState extends State<EditProfileView> {
                         onTap: _pickImage,
                         child: CircleAvatar(
                           radius: 50,
+                          backgroundColor: Colors.grey.shade200,
                           backgroundImage: displayImage,
+                          child: displayImage == null
+                              ? const Icon(Icons.person,
+                                  size: 100, color: Colors.grey)
+                              : null,
                         ),
                       ),
                       const SizedBox(height: 10),

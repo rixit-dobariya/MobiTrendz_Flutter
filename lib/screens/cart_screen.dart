@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:mobitrendz/constants/app_constants.dart';
 import 'package:mobitrendz/screens/checkout_screen.dart';
+import 'package:mobitrendz/screens/select_address_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -29,35 +30,45 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Future<void> fetchCartData() async {
-    SharedPreferences sp = await SharedPreferences.getInstance();
-    String? userId = sp.getString("userId");
-
-    if (userId == null) {
-      if (!mounted) return;
-      setState(() {
-        hasError = true;
-        isLoading = false;
-      });
-      Get.snackbar('Error', 'User not logged in.',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP);
-      return;
-    }
-
-    final cartUrl = '${AppConstants.baseUrl}/cart/$userId';
-
     try {
+      SharedPreferences sp = await SharedPreferences.getInstance();
+      String? userId = sp.getString("userId");
+
+      if (userId == null || userId.isEmpty) {
+        if (!mounted) return;
+        setState(() {
+          hasError = true;
+          isLoading = false;
+        });
+        Get.snackbar('Error', 'User not logged in.',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP);
+        return;
+      }
+
+      final cartUrl = '${AppConstants.baseUrl}/cart/$userId';
+
       final response = await http.get(Uri.parse(cartUrl));
 
       if (!mounted) return;
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = json.decode(response.body);
-        final List<dynamic> items = data['items'];
 
-        checkoutController.cartItems.assignAll(items);
-        checkoutController.calculateTotal();
+        // Check if 'items' exists and is a list before accessing
+        if (data.containsKey('items') && data['items'] is List) {
+          final List<dynamic> items = data['items'];
+
+          // Initialize empty list if null
+          checkoutController.cartItems.clear();
+          checkoutController.cartItems.assignAll(items);
+          checkoutController.calculateTotal();
+        } else {
+          // Handle case where 'items' doesn't exist or isn't a list
+          checkoutController.cartItems.clear();
+          checkoutController.calculateTotal();
+        }
 
         setState(() {
           isLoading = false;
@@ -89,16 +100,25 @@ class _CartScreenState extends State<CartScreen> {
   Future<void> updateQuantity(String productId, int newQuantity) async {
     if (newQuantity < 1) return;
 
-    SharedPreferences sp = await SharedPreferences.getInstance();
-    String? userId = sp.getString("userId");
-    final url = '${AppConstants.baseUrl}/cart/$userId';
-
-    if (!mounted) return;
-    setState(() {
-      updatingMap[productId] = true;
-    });
-
     try {
+      SharedPreferences sp = await SharedPreferences.getInstance();
+      String? userId = sp.getString("userId");
+
+      if (userId == null || userId.isEmpty) {
+        Get.snackbar('Error', 'User not logged in.',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP);
+        return;
+      }
+
+      final url = '${AppConstants.baseUrl}/cart/$userId';
+
+      if (!mounted) return;
+      setState(() {
+        updatingMap[productId] = true;
+      });
+
       final response = await http.put(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
@@ -127,25 +147,35 @@ class _CartScreenState extends State<CartScreen> {
           backgroundColor: Colors.red,
           colorText: Colors.white,
           snackPosition: SnackPosition.TOP);
+    } finally {
+      if (mounted) {
+        setState(() {
+          updatingMap[productId] = false;
+        });
+      }
     }
-
-    if (!mounted) return;
-    setState(() {
-      updatingMap[productId] = false;
-    });
   }
 
   Future<void> removeCartItem(String productId) async {
-    SharedPreferences sp = await SharedPreferences.getInstance();
-    String? userId = sp.getString("userId");
-    final url = '${AppConstants.baseUrl}/cart/$userId';
-
-    if (!mounted) return;
-    setState(() {
-      deletingMap[productId] = true;
-    });
-
     try {
+      SharedPreferences sp = await SharedPreferences.getInstance();
+      String? userId = sp.getString("userId");
+
+      if (userId == null || userId.isEmpty) {
+        Get.snackbar('Error', 'User not logged in.',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP);
+        return;
+      }
+
+      final url = '${AppConstants.baseUrl}/cart/$userId';
+
+      if (!mounted) return;
+      setState(() {
+        deletingMap[productId] = true;
+      });
+
       final response = await http.delete(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
@@ -163,8 +193,14 @@ class _CartScreenState extends State<CartScreen> {
               snackPosition: SnackPosition.TOP);
         }
       } else {
-        final data = jsonDecode(response.body);
-        Get.snackbar('Error', data['message'] ?? 'Failed to remove item',
+        Map<String, dynamic>? data;
+        try {
+          data = jsonDecode(response.body);
+        } catch (_) {
+          data = null;
+        }
+
+        Get.snackbar('Error', data?['message'] ?? 'Failed to remove item',
             backgroundColor: Colors.red,
             colorText: Colors.white,
             snackPosition: SnackPosition.TOP);
@@ -175,12 +211,13 @@ class _CartScreenState extends State<CartScreen> {
           backgroundColor: Colors.red,
           colorText: Colors.white,
           snackPosition: SnackPosition.TOP);
+    } finally {
+      if (mounted) {
+        setState(() {
+          deletingMap[productId] = false;
+        });
+      }
     }
-
-    if (!mounted) return;
-    setState(() {
-      deletingMap[productId] = false;
-    });
   }
 
   @override
@@ -188,12 +225,13 @@ class _CartScreenState extends State<CartScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text("My Cart", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("My Cart",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -201,9 +239,9 @@ class _CartScreenState extends State<CartScreen> {
         alignment: Alignment.bottomCenter,
         children: [
           if (isLoading)
-            Center(child: CircularProgressIndicator())
+            const Center(child: CircularProgressIndicator())
           else if (hasError)
-            Center(child: Text('Failed to load cart data'))
+            const Center(child: Text('Failed to load cart data'))
           else if (checkoutController.cartItems.isEmpty)
             Center(
               child: Column(
@@ -211,7 +249,7 @@ class _CartScreenState extends State<CartScreen> {
                 children: [
                   Icon(Icons.shopping_cart_outlined,
                       size: 100, color: Colors.grey.shade400),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text(
                     "Your cart is empty",
                     style: TextStyle(
@@ -228,19 +266,38 @@ class _CartScreenState extends State<CartScreen> {
               padding: const EdgeInsets.only(bottom: 120),
               itemCount: checkoutController.cartItems.length,
               itemBuilder: (context, index) {
-                var pObj = checkoutController.cartItems[index] as Map? ?? {};
-                final productId = pObj['productId']['_id'];
+                final item = checkoutController.cartItems[index];
+                if (item == null || !(item is Map)) {
+                  return const SizedBox.shrink();
+                }
+
+                // Safely get productId
+                String? productId;
+                try {
+                  final productIdObj = item['productId'];
+                  if (productIdObj is Map && productIdObj.containsKey('_id')) {
+                    productId = productIdObj['_id']?.toString();
+                  }
+                } catch (_) {
+                  productId = null;
+                }
+
+                if (productId == null) {
+                  return const SizedBox.shrink();
+                }
+
                 final isUpdating = updatingMap[productId] == true;
                 final isDeleting = deletingMap[productId] == true;
+                final int quantity = item['quantity'] ?? 1;
 
                 return CartItem(
-                  item: pObj,
+                  item: item,
                   isUpdating: isUpdating,
                   isDeleting: isDeleting,
-                  onRemove: () => removeCartItem(productId),
+                  onRemove: () => removeCartItem(productId!),
                   onQuantityChanged: (change) => updateQuantity(
-                    productId,
-                    pObj['quantity'] + change,
+                    productId!,
+                    quantity + change,
                   ),
                 );
               },
@@ -279,13 +336,48 @@ class CartItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final productData = item['productId'] as Map<dynamic, dynamic>;
-    final int quantity = item['quantity'] ?? 1;
-    final int salePrice = productData['salePrice'] ?? 0;
-    final int discount = productData['discount'] ?? 0;
+    Map<dynamic, dynamic>? productData;
+    try {
+      productData = item['productId'] is Map
+          ? item['productId'] as Map<dynamic, dynamic>
+          : null;
+    } catch (_) {
+      productData = null;
+    }
 
-    final priceAfterDiscount = salePrice - salePrice * discount / 100;
-    final totalPrice = priceAfterDiscount * quantity;
+    if (productData == null) {
+      return const SizedBox.shrink();
+    }
+
+    final int quantity = item['quantity'] ?? 1;
+
+    // Safely extract numeric values with fallbacks
+    int salePrice = 0;
+    int discount = 0;
+
+    try {
+      final salePriceValue = productData['salePrice'];
+      if (salePriceValue is int) {
+        salePrice = salePriceValue;
+      } else if (salePriceValue != null) {
+        salePrice = int.tryParse(salePriceValue.toString()) ?? 0;
+      }
+
+      final discountValue = productData['discount'];
+      if (discountValue is int) {
+        discount = discountValue;
+      } else if (discountValue != null) {
+        discount = int.tryParse(discountValue.toString()) ?? 0;
+      }
+    } catch (_) {
+      // Use defaults if any exception occurs
+    }
+
+    final double priceAfterDiscount = salePrice - salePrice * discount / 100;
+    final double totalPrice = priceAfterDiscount * quantity;
+    final String? imageUrl = productData['productImage']?.toString();
+    final String productName =
+        productData['productName']?.toString() ?? 'Unknown Product';
 
     return Container(
       height: 160,
@@ -303,14 +395,17 @@ class CartItem extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Image.network(
-                productData['productImage'] ?? 'https://placeholder.com/80',
-                height: 80,
-                width: 65,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.image_not_supported, size: 65),
-              ),
+              if (imageUrl != null && imageUrl.isNotEmpty)
+                Image.network(
+                  imageUrl,
+                  height: 80,
+                  width: 65,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.image_not_supported, size: 65),
+                )
+              else
+                const Icon(Icons.image_not_supported, size: 65),
               const SizedBox(width: 15),
               Expanded(
                 child: Column(
@@ -320,8 +415,8 @@ class CartItem extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            productData['productName'] ?? 'Unknown Product',
-                            style: TextStyle(
+                            productName,
+                            style: const TextStyle(
                               color: Colors.black,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -340,7 +435,7 @@ class CartItem extends StatelessWidget {
                               )
                             : IconButton(
                                 onPressed: onRemove,
-                                icon: Icon(
+                                icon: const Icon(
                                   Icons.close_rounded,
                                   color: Colors.grey,
                                 ),
@@ -375,7 +470,7 @@ class CartItem extends StatelessWidget {
                           const SizedBox(width: 20),
                           Text(
                             "$quantity",
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.black,
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -395,8 +490,8 @@ class CartItem extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "₹$priceAfterDiscount",
-                          style: TextStyle(
+                          "₹${priceAfterDiscount.toStringAsFixed(2)}",
+                          style: const TextStyle(
                             color: Colors.black,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -411,8 +506,8 @@ class CartItem extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          "₹$totalPrice",
-                          style: TextStyle(
+                          "₹${totalPrice.toStringAsFixed(2)}",
+                          style: const TextStyle(
                             color: Colors.black,
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -468,8 +563,8 @@ class BottomCheckoutBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
@@ -480,7 +575,7 @@ class BottomCheckoutBar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              const Text(
                 "Total Price",
                 style: TextStyle(
                   fontSize: 16,
@@ -490,7 +585,7 @@ class BottomCheckoutBar extends StatelessWidget {
               ),
               Text(
                 "₹${totalPrice.toStringAsFixed(2)}",
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
@@ -498,26 +593,30 @@ class BottomCheckoutBar extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           MaterialButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CheckoutScreen()),
-              );
-            },
+            onPressed: totalPrice > 0
+                ? () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SelectAddressView(),
+                      ),
+                    );
+                  }
+                : null,
             height: 55,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
             minWidth: double.infinity,
-            color: Colors.black,
+            color: totalPrice > 0 ? Colors.black : Colors.grey,
             child: Stack(
               alignment: Alignment.centerRight,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+                  children: const [
                     Text(
                       "Checkout",
                       style: TextStyle(
@@ -533,10 +632,11 @@ class BottomCheckoutBar extends StatelessWidget {
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(5),
                   ),
-                  padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                   child: Text(
                     "₹${totalPrice.toStringAsFixed(2)}",
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: Colors.white,
