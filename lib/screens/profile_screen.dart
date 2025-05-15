@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mobitrendz/screens/adress_list_screen.dart';
 import 'package:mobitrendz/screens/edit_profile.dart';
 import 'package:mobitrendz/screens/edit_address.dart';
+import 'package:mobitrendz/screens/edit_profile_view.dart';
 import 'package:mobitrendz/screens/signin_screen.dart';
 
 void main() {
@@ -47,7 +49,7 @@ class ProfileScreen extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => EditProfileScreen()),
+                MaterialPageRoute(builder: (context) => EditProfileView()),
               );
             },
           ),
@@ -57,7 +59,7 @@ class ProfileScreen extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => EditAddressScreen()),
+                MaterialPageRoute(builder: (context) => AddressListView()),
               );
             },
           ),
