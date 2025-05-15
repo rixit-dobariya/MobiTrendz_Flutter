@@ -105,18 +105,25 @@ class _HomePageContentState extends State<HomePageContent> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Profile
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundImage: AssetImage("assets/profiles.png"),
+            RichText(
+              text: const TextSpan(
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  fontFamily: 'Montserrat', // or any stylish custom font
                 ),
-                const SizedBox(width: 12),
-                const Text(
-                  "Jay Gorfad",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                ),
-              ],
+                children: [
+                  TextSpan(
+                    text: 'Mobi',
+                    style: TextStyle(color: Colors.black87),
+                  ),
+                  TextSpan(
+                    text: 'Trendz',
+                    style: TextStyle(color: Colors.deepPurple),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
 
